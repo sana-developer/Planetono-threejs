@@ -34,3 +34,12 @@ font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   letter-spacing: -0.15em !important;
   --tw-tracking: 0.025em !important;
 }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  /* Avoid forcing overflow-y hidden or scroll here */
+  overflow-x: hidden; 
+}
