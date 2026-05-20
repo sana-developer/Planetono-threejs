@@ -1,14 +1,14 @@
 'use client';
 
-import Image from 'next/image';
 import { Volume2 } from 'lucide-react';
 import LogoAnimation from './LogoAnimation';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
+gsap.registerPlugin(ScrollTrigger);
+
 export function Navbar() {
-  gsap.registerPlugin(ScrollTrigger)
   useGSAP(() => {
     gsap.to(".logo-letter", {
       opacity: 1,
@@ -20,22 +20,22 @@ export function Navbar() {
     })
 
     gsap.to(".nav", {
-      background: "#e7000b", // i want full background, i is like transparent
+      backgroundColor: "#eb3322",
+      opacity: 1,
       position: "fixed",
-      duration: 0.1,
+      duration: 0.2,
       paddingLeft: "100px",
       paddingRight: "100px",
-      borderBottom: "5px solid black",
+      borderBottom: "3px solid black",
       scrollTrigger: {
-        trigger: '.hero',
-        start: 'top top',
-        scrub: true,
-      }
-
-    })
+        trigger: ".hero",
+        start: "top top",
+        toggleActions: "play none none reverse",
+      },
+    });
   })
   return (
-    <div className="nav z-100 w-full flex items-center justify-between px-20 py-6 font-bold text-black relative">
+    <div className="nav z-50 w-full flex items-center justify-between px-20 py-6 font-bold text-black relative bg-transparent">
       <div className="flex gap-10 text-lg">
         <p className="cursor-pointer">How it works</p>
         <p className="cursor-pointer">Locations</p>

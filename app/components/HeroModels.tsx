@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, useAnimations, useGLTF } from "@react-three/drei";
+import { Environment, OrbitControls, Text, useAnimations, useGLTF } from "@react-three/drei";
 import { useEffect, useRef } from "react";
+import gsap from "gsap";
 
 const MODEL_CONFIGS = [
   {
@@ -30,6 +31,7 @@ interface HeroModelsProps {
 
 export default function HeroModels({ activeIndex }: HeroModelsProps) {
   const modelRef = useRef<any>();
+  const groupRef = useRef<THREE.Group>(null);
   const model = useGLTF("/models/slider_model.glb");
   const config = MODEL_CONFIGS[activeIndex];
 
@@ -58,16 +60,41 @@ export default function HeroModels({ activeIndex }: HeroModelsProps) {
   const object = model.nodes[config.key];
   if (!object) return null;
 
+  useEffect(() => {
+    if (!groupRef.current) return;
+
+    const tl = gsap.timeline();
+
+    // EXIT animation
+    tl.fromTo(groupRef.current.position, 
+      { x: 80, opacity: 1, duration: 0.6, ease: "power3.out" },
+      { x: 0, opacity: 0 });
+
+    // RESET position instantly after exit
+    tl.set(groupRef.current.position, { x: 5 });
+
+    // ENTER animation with bounce
+    tl.to(groupRef.current.position, {
+      x: 0,
+      duration: 0.8,
+      ease: "back.out(1.7)",
+    });
+  }, [activeIndex]);
+
   return (
     <>
-      <primitive
-        ref={modelRef}
-        object={object}
-        position={config.position}
-        rotation={config.rotation}
-      />
+      <group ref={groupRef}>
+        <primitive
+          object={object}
+          position={config.position}
+          rotation={config.rotation}
+          scale={1.2}
+        />
+      </group>
+      {/* <Environment preset="sunset" /> */}
+      
       <directionalLight position={[0, 5, 5]} color={0xffffff} intensity={10} />
-      <OrbitControls />
+      {/* <OrbitControls /> */}
     </>
   );
 }

@@ -5,7 +5,8 @@ import { Navbar } from "./Navbar";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import HeroModels from "./HeroModels";
 import { Canvas } from "@react-three/fiber";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
+import gsap from "gsap";
 
 const SLIDES = [
   {
@@ -33,10 +34,28 @@ export function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [progress, setProgress] = useState(0);
 
-  const goTo = useCallback((index: number) => {
-    setCurrent((index + SLIDES.length) % SLIDES.length);
-    setProgress(0);
-  }, []);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const descRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+
+  const goTo = (index: number) => {
+    const nextIndex = (index + SLIDES.length) % SLIDES.length;
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setCurrent(nextIndex);
+        setProgress(0);
+      },
+    });
+
+    // OUT animation (current UI)
+    tl.to(".hero-content", {
+      x: -80,
+      opacity: 0,
+      duration: 0.4,
+      ease: "power2.in",
+    });
+  };
 
   // Progress bar + auto-switch
   useEffect(() => {
@@ -50,7 +69,7 @@ export function HeroSection() {
       if (elapsed >= AUTO_SWITCH_MS) {
         setCurrent((prev) => (prev + 1) % SLIDES.length);
         setProgress(0);
-        clearInterval(interval);
+        clearInterval(interval); 
       }
     }, 50);
 
@@ -59,15 +78,39 @@ export function HeroSection() {
 
   const slide = SLIDES[current];
 
+  // animate text on slide change
+  useEffect(() => {
+    const tl = gsap.timeline();
+
+    tl.from(imageRef.current, {
+      opacity: 0,
+      duration: 0.4,
+      ease: "power2.in",
+    })
+
+    tl.fromTo(
+      titleRef.current,
+      { x: 80, opacity: 0 },
+      { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" }
+    );
+
+    tl.fromTo(
+      descRef.current,
+      { x: 80, opacity: 0 },
+      { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
+      "-=0.4"
+    );
+  }, [current]);
+
   return (
-    <div className="hero w-full min-h-screen bg-[#f4be2c] relative overflow-hidden">
+    <div className="hero w-full min-h-screen relative overflow-hidden">
       <Navbar />
 
-      <div className="relative grid grid-cols-3 items-center px-10">
+      <div className="hero-section relative grid grid-cols-3 items-center px-10 min-h-[90vh]">
         {/* LEFT */}
         <div className="flex flex-col items-start gap-6">
           <div className="absolute top-0">
-            <Image src={Images[current]} alt="bubble" width={350} height={350} />
+            <Image ref={imageRef} src={Images[current]} alt="bubble" width={450} height={450} />
           </div>
           <Image src="/star.svg" alt="star" width={60} height={60} />
         </div>
@@ -81,8 +124,8 @@ export function HeroSection() {
 
         {/* CENTER */}
         <div className="flex justify-center">
-          <div className="absolute top-0 w-55 h-85 bg-red-600 rounded-[50%]" />
-          <div className="absolute top-20 w-150 h-80">
+          <div className="absolute top-0 w-75 h-115 bg-red-600 rounded-[50%] border-5 border-black" />
+          <div className="absolute top-20 w-150 h-90">
             <Canvas camera={{ position: [0, 0, 90], fov: 45 }}>
               <HeroModels activeIndex={current} />
             </Canvas>
@@ -90,16 +133,16 @@ export function HeroSection() {
         </div>
 
         {/* RIGHT */}
-        <div className="flex flex-col gap-6 transition-all duration-500">
+        <div className="hero-content flex flex-col justify-center gap-6 transition-all duration-500">
           <h1
+            ref={titleRef}
             key={current}
-            className="text-5xl font-extrabold leading-tight whitespace-pre-line
-                       animate-fade-in"
+            className="text-5xl font-extrabold leading-tight whitespace-pre-line"
           >
             {slide.title}
           </h1>
 
-          <div className="grid grid-cols-2 gap-6 text-sm">
+          <div ref={descRef} className="grid grid-cols-2 gap-6 text-sm">
             <p>{slide.desc1}</p>
             <p>{slide.desc2}</p>
           </div>

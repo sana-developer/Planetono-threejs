@@ -10,16 +10,15 @@ import HeroModels from "./components/HeroModels";
 export default function Home() {
   const [showLoader, setShowLoader] = useState(false);
   return (
-    <main className="min-h-screen overflow-x-hidden" >
+    <main className="w-full relative"> {/* Removed min-h-screen & overflow-x-hidden here */}
       {showLoader ? (
-        <LoadingScreen onStart={()=> setShowLoader(false)} />
+        <LoadingScreen onStart={() => setShowLoader(false)} />
       ) : (
-        <>
-        <HeroSection />
-        <HowItWorks />
-        
-        </>
-      )}      
+        <div className="main bg-[#f4be2c] w-full overflow-x-hidden">
+          <HeroSection />
+          <HowItWorks />
+        </div>
+      )}
     </main>
   );
 }
