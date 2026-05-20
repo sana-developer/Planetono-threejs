@@ -1,20 +1,19 @@
-"use client"
-import Image from "next/image";
-import LoadingScreen from "./components/LoadingScreen";
+"use client";
+
 import { useState } from "react";
 import { HeroSection } from "./components/Hero";
 import { HowItWorks } from "./components/HowItWorks";
-import { Canvas } from "@react-three/fiber";
-import HeroModels from "./components/HeroModels";
+import LoadingScreen from "./components/LoadingScreen";
 
 export default function Home() {
   const [showLoader, setShowLoader] = useState(false);
+
   return (
-    <main className="w-full relative"> {/* Removed min-h-screen & overflow-x-hidden here */}
+    <main className="w-full relative bg-[#f4be2c]">
       {showLoader ? (
         <LoadingScreen onStart={() => setShowLoader(false)} />
       ) : (
-        <div className="main bg-[#f4be2c] w-full overflow-x-hidden">
+        <div className="w-full">
           <HeroSection />
           <HowItWorks />
         </div>
