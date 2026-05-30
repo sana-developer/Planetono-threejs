@@ -47,7 +47,7 @@ export default function HowItWorksModels() {
     // Reset the master container group properties
     if (nodes.Burger) {
       nodes.Burger.position.set(0, 0, 0);
-      nodes.Burger.scale.setScalar(1);
+      nodes.Burger.scale.setScalar(6);
     }
 
     // Spread pieces way up high in the sky initially inside the Burger group coordinate matrix
@@ -56,7 +56,7 @@ export default function HowItWorksModels() {
       if (part) {
         part.position.set(0, 25 + (i * 2.5), 0); // Cascaded entry coordinates
         part.rotation.set(0, Math.PI * (i + 1) * 0.25, 0);
-        part.scale.setScalar(1);
+        part.scale.setScalar(6);
       }
     });
 
@@ -118,10 +118,10 @@ export default function HowItWorksModels() {
       if (part) {
         tl.to(part.position, {
           x: 0,
-          y: index * 0.015,
+          y: index * 0.3,
           z: 0,
           duration: 3,
-        }, `burgerAssemble+=${index * 0.15}`);
+        }, `burgerAssemble+=${index * 0.45}`);
 
         tl.to(part.rotation, {
           x: 0,
