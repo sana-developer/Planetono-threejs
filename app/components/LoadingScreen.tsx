@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRef } from 'react';
 import LogoAnimation from './LogoAnimation';
 
-export default function LoadingScreen({onStart}) {
+export default function LoadingScreen({onStart}: {onStart: () => void}) {
   const containerRef = useRef(null);
 
   useGSAP(() => {

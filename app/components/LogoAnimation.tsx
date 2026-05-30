@@ -36,7 +36,7 @@ function LogoAnimation() {
         {text.split('').map((char, i) => (
           <span
             key={i}
-            ref={(el) => (lettersRef.current[i] = el)}
+            ref={(el) => { lettersRef.current[i] = el; }}
             onMouseEnter={() => handleHover(i)}
             className="logo-letter inline-block opacity-0 cursor-pointer"
           >

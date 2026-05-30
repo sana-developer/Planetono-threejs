@@ -30,7 +30,7 @@ interface HeroModelsProps {
 }
 
 export default function HeroModels({ activeIndex }: HeroModelsProps) {
-  const modelRef = useRef<any>();
+  const modelRef = useRef<any>(null);
   const groupRef = useRef<THREE.Group>(null);
   const model = useGLTF("/models/slider_model.glb");
   const config = MODEL_CONFIGS[activeIndex];

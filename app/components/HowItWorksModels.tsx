@@ -31,6 +31,15 @@ export default function HowItWorksModels() {
     scene.position.set(0, -0.5, 0);
     scene.rotation.set(0, 0, 0);
 
+    // Disable frustum culling for all child meshes to prevent negative scale culling issues
+    scene.traverse((child: any) => {
+      if (child.isMesh) {
+        child.frustumCulled = false;
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
     // Explicit order from bottom piece to top piece
     const orderedBurgerParts = [
       'Burger_Part_10', // Bottom Bun
@@ -69,19 +78,31 @@ export default function HowItWorksModels() {
     if (nodes.Donut) nodes.Donut.position.set(-45, 0, 0);
     if (nodes.French_Fries) nodes.French_Fries.position.set(45, 0, 0);
 
-    // Dynamic rotation proxy tracker for the lid opening/closing calculations
-    const lidState = { angle: -1.75, posY: 1.15, posZ: -1.1 };
+    // Dynamic state tracker for the box lid angle animations
+    const lidState = { angle: -2.2 }; // Starts fully wide open
 
-    // Box initial hidden setup down below
-    if (nodes.Box) {
-      nodes.Box.position.set(0, -45, 0);
-      nodes.Box.rotation.set(0, Math.PI / 5, 0);
-
-      if (nodes.Box_Upper_Part) {
-        // Clear out raw local orientations that trigger the upside down flipping bug
-        nodes.Box_Upper_Part.rotation.set(0, 0, 0);
-        nodes.Box_Upper_Part.position.set(0, 0, 0);
+    // Box baseline orientation & initial hidden setup deep below the viewport
+    const boxParts = ['Box', 'Box_Bottom_Part', 'Box_Upper_Part_Empty', 'Box_Upper_Part'];
+    boxParts.forEach((name) => {
+      const part = nodes[name];
+      if (part) {
+        // Uniform reset to prevent giant/microscopic scaling problems from parent glTF overrides
+        part.scale.setScalar(1);
       }
+    });
+
+    // Check if there is a main parent Box object or if we manage Box components directly
+    const boxContainer = nodes.Box || nodes.Box_Bottom_Part;
+    if (boxContainer) {
+      boxContainer.position.set(0, -50, 0); // Positioned down at bottom initially
+      boxContainer.rotation.set(0, Math.PI / 4, 0); // Slight angle for aesthetic depth
+    }
+
+    // Initialize Box Lid default open state positions
+    if (nodes.Box_Upper_Part) {
+      nodes.Box_Upper_Part.rotation.x = lidState.angle;
+    } else if (nodes.Box_Upper_Part_Empty) {
+      nodes.Box_Upper_Part_Empty.rotation.x = lidState.angle;
     }
 
     // 2. Main Scroll Animation Timeline
@@ -96,18 +117,17 @@ export default function HowItWorksModels() {
         invalidateOnRefresh: true,
       },
       onUpdate: () => {
-        // Safe updates during the scrubbing phase to keep lid correctly tracked
+        // Ensures lid rotation values update correctly step-by-step during scroll-scrubbing
         if (nodes.Box_Upper_Part) {
           nodes.Box_Upper_Part.rotation.x = lidState.angle;
-          nodes.Box_Upper_Part.position.y = lidState.posY;
-          nodes.Box_Upper_Part.position.z = lidState.posZ;
+        } else if (nodes.Box_Upper_Part_Empty) {
+          nodes.Box_Upper_Part_Empty.rotation.x = lidState.angle;
         }
       }
     });
 
-    // STEP 1: Pieces descend into position while the whole master container flies right to the camera face
+    // STEP 1: Pieces descend into position
     tl.addLabel("burgerAssemble");
-
     if (nodes.Burger) {
       tl.to(nodes.Burger.position, { x: 0, y: 0.5, z: 12, duration: 3 }, "burgerAssemble");
       tl.to(nodes.Burger.scale, { x: 2.2, y: 2.2, z: 2.2, duration: 3 }, "burgerAssemble");
@@ -132,84 +152,74 @@ export default function HowItWorksModels() {
       }
     });
 
-    // COGNITIVE PAUSE: Keep the massive close-up burger floating front and center
-    tl.to({}, { duration: 2 });
+    // Hold layout
+    tl.to({}, { duration: 1 });
 
-    // STEP 2: Side snacks and space elements drift smoothly into view behind the giant burger
+    // STEP 2: Side snacks rise and slide into view
     tl.addLabel("spaceElementsRise");
-    if (nodes.Astro_Cat) {
-      tl.to(nodes.Astro_Cat.position, { y: -1.5, z: 3, duration: 4, ease: "power1.out" }, "spaceElementsRise");
-    }
-    if (nodes.Planet_Empty) {
-      tl.to(nodes.Planet_Empty.position, { y: 12, x: -16, duration: 4, ease: "power1.out" }, "spaceElementsRise");
-    }
-    if (nodes.Planet_H_Empty) {
-      tl.to(nodes.Planet_H_Empty.position, { y: -8, x: 17, duration: 4, ease: "power1.out" }, "spaceElementsRise");
-    }
-    if (nodes.Meteor_Empty) {
-      tl.to(nodes.Meteor_Empty.position, { y: 4, x: -12, duration: 4, ease: "power1.out" }, "spaceElementsRise");
-    }
+    if (nodes.Astro_Cat) tl.to(nodes.Astro_Cat.position, { y: -1.5, z: 3, duration: 4 }, "spaceElementsRise");
+    if (nodes.Planet_Empty) tl.to(nodes.Planet_Empty.position, { y: 12, x: -16, duration: 4 }, "spaceElementsRise");
+    if (nodes.Planet_H_Empty) tl.to(nodes.Planet_H_Empty.position, { y: -8, x: 17, duration: 4 }, "spaceElementsRise");
+    if (nodes.Meteor_Empty) tl.to(nodes.Meteor_Empty.position, { y: 4, x: -12, duration: 4 }, "spaceElementsRise");
 
     tl.addLabel("snacksIn", "-=2");
     if (nodes.Donut) {
       tl.to(nodes.Donut.position, { x: -12, y: 0.5, z: 3, duration: 3.5, ease: "back.out(1.2)" }, "snacksIn");
-      tl.to(nodes.Donut.rotation, { y: Math.PI * 2, duration: 3.5 }, "snacksIn");
     }
     if (nodes.French_Fries) {
       tl.to(nodes.French_Fries.position, { x: 12, y: 0.5, z: 3, duration: 3.5, ease: "back.out(1.2)" }, "snacksIn");
-      tl.to(nodes.French_Fries.rotation, { y: -Math.PI * 2, duration: 3.5 }, "snacksIn");
     }
 
-    // COGNITIVE PAUSE: Hold layout components together on screen
-    tl.to({}, { duration: 2 });
+    // Hold layout
+    tl.to({}, { duration: 1 });
 
-    // STEP 3: Box rises straight up from the bottom with its lid explicitly kept open
+    // STEP 3: Box rises up to center of screen completely open
     tl.addLabel("boxArrival");
-    if (nodes.Box) {
-      tl.to(nodes.Box.position, { y: -3.8, duration: 3, ease: "power2.out" }, "boxArrival");
+    if (boxContainer) {
+      tl.to(boxContainer.position, { x: 0, y: -2, z: 2, duration: 4, ease: "power2.out" }, "boxArrival");
     }
+    // Maintain open configuration while arriving
+    tl.to(lidState, { angle: -2.2, duration: 4 }, "boxArrival");
 
-    // Explicitly lock proxy values to wide open configuration while rising
-    tl.to(lidState, { angle: -1.75, posY: 1.15, posZ: -1.1, duration: 3 }, "boxArrival");
+    // Clear distant space background components out of view
+    if (nodes.Planet_Empty) tl.to(nodes.Planet_Empty.position, { y: 45, duration: 2 }, "boxArrival");
+    if (nodes.Planet_H_Empty) tl.to(nodes.Planet_H_Empty.position, { y: -45, duration: 2 }, "boxArrival");
+    if (nodes.Meteor_Empty) tl.to(nodes.Meteor_Empty.position, { y: -45, duration: 2 }, "boxArrival");
 
-    // Clear out distant background space clutter
-    if (nodes.Planet_Empty) tl.to(nodes.Planet_Empty.position, { y: 35, duration: 2 }, "boxArrival");
-    if (nodes.Planet_H_Empty) tl.to(nodes.Planet_H_Empty.position, { y: -35, duration: 2 }, "boxArrival");
-    if (nodes.Meteor_Empty) tl.to(nodes.Meteor_Empty.position, { y: -35, duration: 2 }, "boxArrival");
-
-    // STEP 4: Package everything into the open box base container
-    tl.addLabel("packInside", "+=0.3");
+    // STEP 4: Package and fit the burger, donut, and fries down inside the box base
+    tl.addLabel("packInside", "+=0.2");
 
     if (nodes.Burger) {
-      tl.to(nodes.Burger.position, { x: 0, y: -5.5, z: 0, duration: 3, ease: "power2.in" }, "packInside");
-      tl.to(nodes.Burger.scale, { x: 0.001, y: 0.001, z: 0.001, duration: 2.5, ease: "power2.in" }, "packInside");
+      tl.to(nodes.Burger.position, { x: 0, y: -2.2, z: 2, duration: 3.5, ease: "power2.inOut" }, "packInside");
+      tl.to(nodes.Burger.scale, { x: 0.8, y: 0.8, z: 0.8, duration: 3.5 }, "packInside");
     }
 
-    const insideBoxTargets = ['Donut', 'French_Fries', 'Astro_Cat'];
-    insideBoxTargets.forEach((name) => {
-      const obj = nodes[name];
-      if (obj) {
-        tl.to(obj.position, { x: 0, y: -5.5, z: 0, duration: 3, ease: "power2.in" }, "packInside");
-        tl.to(obj.scale, { x: 0.001, y: 0.001, z: 0.001, duration: 2.5, ease: "power2.in" }, "packInside");
-      }
-    });
+    if (nodes.Donut) {
+      tl.to(nodes.Donut.position, { x: -2.2, y: -2.2, z: 2.8, duration: 3.5, ease: "power2.inOut" }, "packInside");
+      tl.to(nodes.Donut.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 3.5 }, "packInside");
+    }
 
-    // Make sure proxy track holds the open position completely steady while items descend
-    tl.to(lidState, { angle: -1.75, posY: 1.15, posZ: -1.1, duration: 3 }, "packInside");
+    if (nodes.French_Fries) {
+      tl.to(nodes.French_Fries.position, { x: 2.2, y: -2.2, z: 2.8, duration: 3.5, ease: "power2.inOut" }, "packInside");
+      tl.to(nodes.French_Fries.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 3.5 }, "packInside");
+    }
 
-    // STEP 5: Smoothly snap and seal the box lid completely closed back down onto base origin (0,0,0)
+    if (nodes.Astro_Cat) {
+      tl.to(nodes.Astro_Cat.position, { x: 0, y: -2.2, z: 0.8, duration: 3.5, ease: "power2.inOut" }, "packInside");
+      tl.to(nodes.Astro_Cat.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 3.5 }, "packInside");
+    }
+
+    // STEP 5: Snap and seal the box lid completely closed
     tl.addLabel("boxClosing", "+=0.2");
     tl.to(lidState, {
       angle: 0,
-      posY: 0,
-      posZ: 0,
-      duration: 2.5,
+      duration: 3,
       ease: "bounce.out"
     }, "boxClosing");
 
-    // Keep displaying the final closed box until the section finishes scrolling
-    if (nodes.Box) {
-      tl.to(nodes.Box.position, { y: -3.8, duration: 2 }, "+=0.5");
+    // Final hold showcase step
+    if (boxContainer) {
+      tl.to(boxContainer.position, { y: -2, duration: 2 }, "+=0.5");
     }
 
     setTimeout(() => {
@@ -227,10 +237,10 @@ export default function HowItWorksModels() {
       <group ref={groupRef}>
         <primitive object={scene} />
       </group>
-      <ambientLight intensity={1.8} />
-      <directionalLight position={[0, 20, 30]} intensity={2.5} castShadow />
-      <directionalLight position={[15, 5, -10]} intensity={0.4} />
-      <pointLight position={[0, -1, 10]} intensity={1.6} distance={25} />
+      <ambientLight intensity={2.0} />
+      <directionalLight position={[0, 20, 30]} intensity={2.8} castShadow />
+      <directionalLight position={[15, 5, -10]} intensity={0.5} />
+      <pointLight position={[0, -1, 10]} intensity={1.8} distance={30} />
     </>
   );
 }
